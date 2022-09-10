@@ -37,7 +37,7 @@ def parse_xml(xml_file, df_cols):
 
 
 def get_video_id(video_url):
-    ids = re.findall('https://slideslive\\.(com|de)/([0-9]*)/([^/]*)(.*)', video_url)
+    ids = re.findall('https://slideslive\\.(com|de)/([0-9]*)/([^/?]*)(.*)', video_url)
     if len(ids) < 1:
         print('Error: {0} is not a correct url.'.format(video_url))
         exit()
