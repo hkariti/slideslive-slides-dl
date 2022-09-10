@@ -149,31 +149,30 @@ def create_ffmpeg_concat_file(video_id, video_name, slides_iterator, size):
         f.write("file '{0}'\n".format(last_file_path))
 
 
+if __name__ == __main__:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('url')
+    parser.add_argument('--size', default='big', help='medium, big or height in pixels (new videos only)')
+    parser.add_argument('--useragent', default='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/76.0.3809.100 Chrome/76.0.3809.100 Safari/537.36')
+    parser.add_argument('--baseolddataurl', default='https://d2ygwrecguqg66.cloudfront.net/data/presentations', help="Base URL for old XML-based slides")
+    parser.add_argument('--basedataurl', default='https://d1qcbvwoy8vxsg.cloudfront.net/')
+    parser.add_argument('--basemetadataurl', default='https://slides.slideslive.com')
+    parser.add_argument('--waittime', default='0.2', type=float, help='seconds to wait after each download')
+    args = parser.parse_args()
 
-parser = argparse.ArgumentParser()
-parser.add_argument('url')
-parser.add_argument('--size', default='big', help='medium, big or height in pixels (new videos only)')
-parser.add_argument('--useragent', default='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Ubuntu Chromium/76.0.3809.100 Chrome/76.0.3809.100 Safari/537.36')
-parser.add_argument('--baseolddataurl', default='https://d2ygwrecguqg66.cloudfront.net/data/presentations', help="Base URL for old XML-based slides")
-parser.add_argument('--basedataurl', default='https://d1qcbvwoy8vxsg.cloudfront.net/')
-parser.add_argument('--basemetadataurl', default='https://slides.slideslive.com')
-parser.add_argument('--waittime', default='0.2', type=float, help='seconds to wait after each download')
-args = parser.parse_args()
+    args.basedataurl = args.basedataurl.rstrip('/')
+    args.basemetadataurl = args.basemetadataurl.rstrip('/')
+    headers = {'User-Agent': args.useragent}
 
-args.basedataurl = args.basedataurl.rstrip('/')
-args.basemetadataurl = args.basemetadataurl.rstrip('/')
-headers = {'User-Agent': args.useragent}
-
-video_id, video_name = get_video_id(args.url)
-slides_info = download_slides_info(args.basemetadataurl, args.basemetadataurl, video_id, video_name, headers, args.waittime)
-if isinstance(slides_info, dict):
-    # New-style json info
-    size_conversion = dict(big=1080, medium=540)
-    size = size_conversion.get(args.size, args.size)
-    download_slides_json(video_id, video_name, slides_info, size, args.basedataurl, headers, args.waittime)
-    create_ffmpeg_concat_file(video_id, video_name, enumerate(slides_info['slides']), args.size)
-else:
-    print("Failed to download using JSON metadata, falling back to XML")
-    download_slides_xml(video_id, video_name, slides_info, args.size, args.baseolddataurl, headers, args.waittime)
-    create_ffmpeg_concat_file(video_id, video_name, slides_info.iterrows(), args.size)
-
+    video_id, video_name = get_video_id(args.url)
+    slides_info = download_slides_info(args.basemetadataurl, args.basemetadataurl, video_id, video_name, headers, args.waittime)
+    if isinstance(slides_info, dict):
+        # New-style json info
+        size_conversion = dict(big=1080, medium=540)
+        size = size_conversion.get(args.size, args.size)
+        download_slides_json(video_id, video_name, slides_info, size, args.basedataurl, headers, args.waittime)
+        create_ffmpeg_concat_file(video_id, video_name, enumerate(slides_info['slides']), args.size)
+    else:
+        print("Failed to download using JSON metadata, falling back to XML")
+        download_slides_xml(video_id, video_name, slides_info, args.size, args.baseolddataurl, headers, args.waittime)
+        create_ffmpeg_concat_file(video_id, video_name, slides_info.iterrows(), args.size)
